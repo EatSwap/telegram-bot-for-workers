@@ -31,6 +31,7 @@ export async function handleBotRequest(request : Request, ctx : ExecutionContext
 		await telegram.unpinChatMessage(API_TOKEN, message["chat"]["id"], message["message_id"]);
 	}
 
+	// Detect bot commands
 	if (message.hasOwnProperty("entities")) {
 		const len = message["entities"].length;
 		for (let i = 0; i < len; i++) {
