@@ -32,7 +32,7 @@ export default {
 
 		// ----- Filter non-bot requests -----
 		if (path.startsWith(WEBHOOK_PREFIX)) {
-			return await handleBotRequest(request);
+			return await handleBotRequest(request, ctx);
 		}
 
 		// If reached here, the request is not what we want.
