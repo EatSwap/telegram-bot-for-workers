@@ -31,7 +31,7 @@ export default {
 		// ----- HTTP CHECK & PATH PARSE ENDS -----
 
 		// ----- Filter non-bot requests -----
-		if (path.startsWith(WEBHOOK_PREFIX)) {
+		if (path.startsWith("/" + WEBHOOK_PREFIX)) {
 			return await handleBotRequest(request, ctx);
 		}
 

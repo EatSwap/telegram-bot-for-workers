@@ -36,7 +36,6 @@ export async function handleBotRequest(request : Request, ctx : ExecutionContext
 		const len = message["entities"].length;
 		for (let i = 0; i < len; i++) {
 			const entity = message["entities"][i];
-			console.log(entity);
 			// @ts-ignore
 			if (!entity.hasOwnProperty("type") || entity["type"] != "bot_command")
 				continue;
