@@ -35,6 +35,10 @@ export async function handleBotRequest(request : Request, ctx : ExecutionContext
 	// todo: make this async.
 	await func.deleteBotCommands(message, ctx);
 
+	// Restrict new user
+	// todo: make async.
+	await func.banNewMembers(message, ctx);
+
 	// Respond to requester
 	return utility.generateSimpleResponse("200 OK", 200);
 }

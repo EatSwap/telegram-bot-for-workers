@@ -1,6 +1,17 @@
 import {getApiRoot} from "./utility";
 
-export async function callTelegramAPI(token : string, methodName : string, body : any) {
+export class ChatPermissions {
+	can_send_messages = false;
+	can_send_media_messages = false;
+	can_send_polls = false;
+	can_send_other_messages = false;
+	can_add_web_page_previews = false;
+	can_change_info = false;
+	can_invite_users = false;
+	can_pin_messages = false;
+}
+
+async function callTelegramAPI(token : string, methodName : string, body : any) {
 	const URL = getApiRoot(token) + "/" + methodName;
 	const bodyStr = JSON.stringify(body);
 	const request = new Request(URL, {
@@ -25,5 +36,21 @@ export async function deleteMessage(token : string, chat_id : string | number, m
 	return await callTelegramAPI(token, "deleteMessage", {
 		"chat_id" : chat_id,
 		"message_id" : message_id,
+	});
+}
+
+export async function restrictChatMember(token : string, chat_id : string | number, user_id : number, perm : ChatPermissions) {
+	return await callTelegramAPI(token, "restrictChatMember", {
+		"chat_id" : chat_id,
+		"user_id" : user_id,
+		"permissions" : perm,
+	});
+}
+
+export async function sendMessage(token : string, chat_id : string | number, text : string, parsing : string) {
+	return await callTelegramAPI(token, "sendMessage", {
+		"chat_id" : chat_id,
+		"text" : text,
+		"parse_mode" : parsing,
 	});
 }
