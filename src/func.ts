@@ -1,7 +1,8 @@
 import * as telegram from "./telegram";
-import {API_TOKEN, DELETE_DELAY} from "./config";
+import {API_TOKEN, DELETE_DELAY, NEW_MEMBER_GRACE} from "./config";
 import {ChatPermissions} from "./telegram";
 import * as sha256 from "fast-sha256";
+import * as utility from "./utility";
 
 export async function handleAutoPin(message : any) {
 	if (message.hasOwnProperty("is_automatic_forward")) {
@@ -45,7 +46,6 @@ export async function banNewMembers(message : any, ctx : ExecutionContext) {
 	if (!message.hasOwnProperty("new_chat_member"))
 		return;
 	const newMemberId = message["new_chat_member"]["id"];
-
 	console.log("New member joined!");
 
 	// First, restrict the new member.
@@ -62,9 +62,51 @@ export async function banNewMembers(message : any, ctx : ExecutionContext) {
 
 	// Construct text message
 	const textToSend = "您好，[" + message["new_chat_member"]["first_name"] + "](tg://user?id=" + newMemberId.toString() + ")！" +
-		"非常欢迎您加入。在您可以发消息之前，请先完成验证。请在 120 秒内，私聊发送如下内容给我：\n\n```\n" + hStr + "\n```";
+		"非常欢迎您加入。在您可以发消息之前，请先完成验证。请在 " + NEW_MEMBER_GRACE + " 秒内，私聊发送如下内容给我：\n\n```\n" + hStr + "\n```";
 
-	await telegram.sendMessage(API_TOKEN, message["chat"]["id"], textToSend, "MarkdownV2");
+	let messageSentId : number;
+	{
+		const sendResp = await telegram.sendMessage(API_TOKEN, message["chat"]["id"], textToSend, "MarkdownV2");
+		const [sendRespObj, parseSendOK] = utility.parseJSON(await sendResp.text());
+		if (!parseSendOK || !sendRespObj["ok"] || !sendRespObj.hasOwnProperty("result")) {
+			console.warn("Cannot parse sending response to JSON.");
+			messageSentId = 0;
+		}
+		messageSentId = sendRespObj["result"]["message_id"];
+	}
 
 	// todo: After 120 seconds, if a user was still under restriction, remove the user from chat.
+	ctx.waitUntil(new Promise(resolve => {
+		setTimeout(processPostNewMemberJoin, 1000 * NEW_MEMBER_GRACE, message, newMemberId, messageSentId);
+	}));
+}
+
+async function processPostNewMemberJoin(message : any, newMemberId : number, messageSentId : number) {
+	const resp = await telegram.getChatMember(API_TOKEN, message["chat"]["id"], newMemberId);
+	console.log(resp.status);
+
+	const getChatMemberText = await resp.text();
+	console.log(getChatMemberText);
+
+	// Parse JSON from body
+	const [getChatMemberResp, parseOK] = utility.parseJSON(getChatMemberText);
+	if (!parseOK || !getChatMemberResp["ok"] || !getChatMemberResp.hasOwnProperty("result")) {
+		console.warn("Error occurred when calling telegram API.");
+		return;
+	}
+
+	const res = getChatMemberResp["result"];
+	if (!res.hasOwnProperty("can_send_messages") || res["can_send_messages"]) {
+		// Restriction lifted
+		console.log("Ok, Restriction lifted");
+	} else {
+		console.log("Restriction not lifted, kicking");
+		// Kick user
+		await telegram.unbanChatMember(API_TOKEN, message["chat"]["id"], newMemberId, false);
+	}
+
+	// Delete welcome message
+	if (messageSentId != 0) {
+		await telegram.deleteMessage(API_TOKEN, message["chat"]["id"], messageSentId);
+	}
 }

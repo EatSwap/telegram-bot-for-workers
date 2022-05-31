@@ -54,3 +54,18 @@ export async function sendMessage(token : string, chat_id : string | number, tex
 		"parse_mode" : parsing,
 	});
 }
+
+export async function getChatMember(token : string, chat_id : string | number, user_id : number) {
+	return await callTelegramAPI(token, "getChatMember", {
+		"chat_id" : chat_id,
+		"user_id" : user_id,
+	});
+}
+
+export async function unbanChatMember(token : string, chat_id : string | number, user_id : number, only_if_banned : boolean) {
+	return await callTelegramAPI(token, "unbanChatMember", {
+		"chat_id" : chat_id,
+		"user_id" : user_id,
+		"only_if_banned" : only_if_banned,
+	});
+}

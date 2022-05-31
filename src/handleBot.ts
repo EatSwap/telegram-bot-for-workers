@@ -12,19 +12,16 @@ export async function handleBotRequest(request : Request, ctx : ExecutionContext
 	// POST body
 	// This is a string
 	const requestBody = await request.text();
+	console.log(requestBody);
 
 	// Parse JSON from body
-	let jsonObj : any;
-	try {
-		jsonObj = JSON.parse(requestBody);
-	} catch (err) {
-		return utility.generateSimpleResponse("400 Bad Request", 400);
+	const [jsonObj, parseOK] = utility.parseJSON(requestBody);
+	if (!parseOK || !jsonObj.hasOwnProperty("message")) {
+		// Discard silently.
+		// For telegram, this means something not implemented (thus cannot handle, 2xx to ignore).
+		// For any 3rd party, do not let them know how we worked.
+		return utility.generateSimpleResponse("201 Created", 201);
 	}
-
-	if (!jsonObj.hasOwnProperty("message")) {
-		return utility.generateSimpleResponse("400 Bad Request", 400);
-	}
-
 	const message = jsonObj.message;
 
 	// Detect auto-forward & auto-pin
