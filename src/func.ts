@@ -8,19 +8,26 @@ export async function handleAutoPin(message : any) {
 }
 
 export async function deleteBotCommands(message : any, ctx : ExecutionContext) {
-	if (message.hasOwnProperty("entities")) {
-		const len = message["entities"].length;
-		for (let i = 0; i < len; i++) {
-			const entity = message["entities"][i];
-			// @ts-ignore
-			if (!entity.hasOwnProperty("type") || entity["type"] != "bot_command")
-				continue;
-			ctx.waitUntil(new Promise(resolve => {
-				setTimeout(() => {
-					telegram.deleteMessage(API_TOKEN, message["chat"]["id"], message["message_id"]);
-				}, DELETE_DELAY);
-			}));
-			break;
-		}
+	if (message.hasOwnProperty("entities"))
+		return;
+	const len = message["entities"].length;
+	for (let i = 0; i < len; i++) {
+		const entity = message["entities"][i];
+		// @ts-ignore
+		if (!entity.hasOwnProperty("type") || entity["type"] != "bot_command")
+			continue;
+		ctx.waitUntil(new Promise(resolve => {
+			setTimeout(() => {
+				telegram.deleteMessage(API_TOKEN, message["chat"]["id"], message["message_id"]);
+			}, DELETE_DELAY);
+		}));
+		break;
 	}
+}
+
+export async function banNewMembers(message : any, ctx : ExecutionContext) {
+	if (!message.hasOwnProperty("new_chat_member"))
+		return;
+	const newMemberId = message["new_chat_member"]["id"];
+
 }
