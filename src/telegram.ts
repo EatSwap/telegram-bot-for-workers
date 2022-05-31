@@ -88,3 +88,10 @@ export async function unbanChatMember(token : string, chat_id : string | number,
 		"only_if_banned" : only_if_banned,
 	});
 }
+
+export async function sendSticker(token : string, chat_id : string | number, sticker_id : string) {
+	return await callTelegramAPI(token, "sendSticker", {
+		"chat_id" : chat_id,
+		"sticker" : sticker_id,
+	});
+}

@@ -1,6 +1,6 @@
 import * as telegram from "./telegram";
 import {API_TOKEN, DELETE_DELAY, NEW_MEMBER_GRACE} from "./config";
-import {ChatPermissions, sendMessage} from "./telegram";
+import {ChatPermissions, sendMessage, sendSticker} from "./telegram";
 import * as sha256 from "fast-sha256";
 import * as utility from "./utility";
 
@@ -146,5 +146,9 @@ export async function handleVerification(message : any) {
 }
 
 export async function handleDefaultResponse(message : any) {
-
+	// Send a sticker.
+	// Thanks to Fang the Dragon (Twitter: @FangSladeDrum), for making this sticker public!
+	// Sticker: "Astonished Fang"
+	const file_id = "CAACAgUAAxkBAAMUYpY8vBeMC4WzrSeZxxWsBo3dnEAAAi0GAAJ0pvhVP_rKZ6TV-rUkBA";
+	await sendSticker(API_TOKEN, message["from"]["id"], file_id);
 }
