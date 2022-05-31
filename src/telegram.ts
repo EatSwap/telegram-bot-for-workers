@@ -9,6 +9,25 @@ export class ChatPermissions {
 	can_change_info = false;
 	can_invite_users = false;
 	can_pin_messages = false;
+
+
+	constructor(can_send_messages = false,
+				can_send_media_messages = false,
+				can_send_polls = false,
+				can_send_other_messages = false,
+				can_add_web_page_previews = false,
+				can_change_info = false,
+				can_invite_users = false,
+				can_pin_messages = false) {
+		this.can_send_messages = can_send_messages;
+		this.can_send_media_messages = can_send_media_messages;
+		this.can_send_polls = can_send_polls;
+		this.can_send_other_messages = can_send_other_messages;
+		this.can_add_web_page_previews = can_add_web_page_previews;
+		this.can_change_info = can_change_info;
+		this.can_invite_users = can_invite_users;
+		this.can_pin_messages = can_pin_messages;
+	}
 }
 
 async function callTelegramAPI(token : string, methodName : string, body : any) {

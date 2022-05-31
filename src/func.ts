@@ -1,6 +1,6 @@
 import * as telegram from "./telegram";
 import {API_TOKEN, DELETE_DELAY, NEW_MEMBER_GRACE} from "./config";
-import {ChatPermissions} from "./telegram";
+import {ChatPermissions, sendMessage} from "./telegram";
 import * as sha256 from "fast-sha256";
 import * as utility from "./utility";
 
@@ -49,15 +49,16 @@ export async function banNewMembers(message : any, ctx : ExecutionContext) {
 	console.log("New member joined!");
 
 	// First, restrict the new member.
-	let resp = await telegram.restrictChatMember(API_TOKEN, message["chat"]["id"], newMemberId, new ChatPermissions());
-	console.log(resp.status);
-	console.log(await resp.text());
+	{
+		let resp = await telegram.restrictChatMember(API_TOKEN, message["chat"]["id"], newMemberId, new ChatPermissions());
+		console.log("Restrict the new member. OK = " + (resp.status == 200));
+	}
 
 	// Generate magic string to identify user.
 	// Basic concept: "/verify <chatId>:<sha256(userId + (timestamp / 30))>
 	let h = new sha256.Hash();
 	h.update(toStringThenUint8Array(newMemberId));
-	h.update(toStringThenUint8Array(Date.now() / (30 * 1000)));
+	h.update(toStringThenUint8Array(Math.floor(Date.now() / (30 * 1000))));
 	const hStr = "/verify " + message["chat"]["id"] + ":" + toHexStr(h.digest());
 
 	// Construct text message
@@ -74,8 +75,8 @@ export async function banNewMembers(message : any, ctx : ExecutionContext) {
 		}
 		messageSentId = sendRespObj["result"]["message_id"];
 	}
+	console.log("Prompt message sent, id = " + messageSentId);
 
-	// todo: After 120 seconds, if a user was still under restriction, remove the user from chat.
 	ctx.waitUntil(new Promise(resolve => {
 		setTimeout(processPostNewMemberJoin, 1000 * NEW_MEMBER_GRACE, message, newMemberId, messageSentId);
 	}));
@@ -109,4 +110,41 @@ async function processPostNewMemberJoin(message : any, newMemberId : number, mes
 	if (messageSentId != 0) {
 		await telegram.deleteMessage(API_TOKEN, message["chat"]["id"], messageSentId);
 	}
+}
+
+export async function handleVerification(message : any) {
+	// Extract info. "/verify " is 8 ch long.
+	const messageText = message["text"].substring(8);
+	const chatId = messageText.substring(0, messageText.indexOf(":"));
+	const verificationHash = messageText.substring(messageText.indexOf(":") + 1);
+	const userId = message["from"]["id"];
+
+	const timestamp = Math.floor(Date.now() / (30 * 1000));
+	const offsetCount = NEW_MEMBER_GRACE / timestamp + 1;
+	let success = false;
+	for (let i = 0; i <= offsetCount; ++i) {
+		let h = new sha256.Hash();
+		h.update(toStringThenUint8Array(userId));
+		h.update(toStringThenUint8Array(timestamp - i));
+
+		if (toHexStr(h.digest()) != verificationHash)
+			continue;
+
+		// Success now. Lift restrictions!
+		success = true;
+		let resp = await telegram.restrictChatMember(
+			API_TOKEN,
+			chatId,
+			userId,
+			new ChatPermissions(true, true, true, true, true));
+		console.log(resp.status);
+		console.log(await resp.text());
+		break;
+	}
+
+	await sendMessage(API_TOKEN, userId, success ? "谢谢您的验证！您已经能够发言。" : "不对不对，不要玩我。", "MarkdownV2")
+}
+
+export async function handleDefaultResponse(message : any) {
+
 }
