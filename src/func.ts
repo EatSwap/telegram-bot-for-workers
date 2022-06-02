@@ -1,8 +1,9 @@
 import * as telegram from "./telegram";
-import {API_TOKEN, DELETE_DELAY, NEW_MEMBER_GRACE} from "./config";
 import {ChatPermissions, sendMessage, sendSticker} from "./telegram";
+import {API_TOKEN, DELETE_DELAY, NEW_MEMBER_GRACE} from "./config";
 import * as sha256 from "fast-sha256";
 import * as utility from "./utility";
+import {toHexStr, toStringThenUint8Array} from "./utility";
 
 export async function handleAutoPin(message : any) {
 	if (message.hasOwnProperty("is_automatic_forward")) {
@@ -30,16 +31,6 @@ export async function deleteBotCommands(message : any, ctx : ExecutionContext) {
 		}));
 		break;
 	}
-}
-
-function toStringThenUint8Array(d : any) {
-	return Uint8Array.from(d.toString().split("").map((x: string) => x.charCodeAt(0)));
-}
-
-function toHexStr(d : Uint8Array) {
-	return Array.from(d, x => {
-		return ('0' + (x & 0xFF).toString(16)).slice(-2);
-	}).join('');
 }
 
 export async function banNewMembers(message : any, ctx : ExecutionContext) {

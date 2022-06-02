@@ -26,3 +26,13 @@ export function parseJSON(str : string) : readonly [any, boolean] {
 		return [null, false] as const;
 	}
 }
+
+export function toStringThenUint8Array(d: any) {
+	return Uint8Array.from(d.toString().split("").map((x: string) => x.charCodeAt(0)));
+}
+
+export function toHexStr(d: Uint8Array) {
+	return Array.from(d, x => {
+		return ('0' + (x & 0xFF).toString(16)).slice(-2);
+	}).join('');
+}
